@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 require "log4r"
+require "googleauth"
+require "jwt"
+require "google/cloud/os_login/v1beta"
 
 module VagrantPlugins
   module Google
@@ -56,6 +59,19 @@ module VagrantPlugins
               :host => server.private_ip_addresses[0],
               :port => 22
             }
+          end
+
+          os_login = machine.provider_config.get_zone_config(zone).use_os_login
+          if os_login
+            # OS Login is enabled, override SSH username
+            auth = ::Google::Auth.get_application_default()
+            jwt = ::JWT.decode auth.fetch_access_token['id_token'], nil, false
+            email = jwt[0]['email']
+
+            osl_client = ::Google::Cloud::OsLogin::V1beta::OsLoginService::Client.new
+            login_profile = osl_client.get_login_profile(name:"users/#{email}")
+
+            ssh_info[:username] = login_profile['posix_accounts'][0]['username']
           end
 
           # Return SSH network info

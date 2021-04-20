@@ -72,6 +72,11 @@ module VagrantPlugins
       # @return [Hash<String, String>]
       attr_accessor :metadata
 
+      # Use OS Login
+      #
+      # @return Boolean
+      attr_accessor :use_os_login
+
       # The name of the instance
       #
       # @return [String]
@@ -215,6 +220,7 @@ module VagrantPlugins
         @disk_name                   = UNSET_VALUE
         @disk_type                   = UNSET_VALUE
         @metadata                    = {}
+        @use_os_login                = UNSET_VALUE
         @name                        = UNSET_VALUE
         @network                     = UNSET_VALUE
         @network_project_id          = UNSET_VALUE

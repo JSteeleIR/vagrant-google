@@ -56,6 +56,7 @@ module VagrantPlugins
           network_project_id          = zone_config.network_project_id
           subnetwork                  = zone_config.subnetwork
           metadata                    = zone_config.metadata
+          use_os_login                = zone_config.use_os_login
           labels                      = zone_config.labels
           tags                        = zone_config.tags
           can_ip_forward              = zone_config.can_ip_forward
@@ -74,6 +75,10 @@ module VagrantPlugins
           enable_secure_boot          = zone_config.enable_secure_boot
           enable_vtpm                 = zone_config.enable_vtpm
           enable_integrity_monitoring = zone_config.enable_integrity_monitoring
+
+          if use_os_login
+            metadata["enable-oslogin"] = "TRUE"
+          end
 
           # Launch!
           env[:ui].info(I18n.t("vagrant_google.launching_instance"))
