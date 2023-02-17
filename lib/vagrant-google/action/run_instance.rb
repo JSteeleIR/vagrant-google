@@ -73,6 +73,7 @@ module VagrantPlugins
           additional_disks            = zone_config.additional_disks
           accelerators                = zone_config.accelerators
           enable_secure_boot          = zone_config.enable_secure_boot
+          enable_display              = zone_config.enable_display
           enable_vtpm                 = zone_config.enable_vtpm
           enable_integrity_monitoring = zone_config.enable_integrity_monitoring
 
@@ -112,15 +113,22 @@ module VagrantPlugins
           env[:ui].info(" -- Additional Disks:     #{additional_disks}")
           env[:ui].info(" -- Accelerators:         #{accelerators}")
           env[:ui].info(" -- Secure Boot:          #{enable_secure_boot}") if enable_secure_boot
+          env[:ui].info(" -- Display Device:       #{enable_display}") if enable_display
           env[:ui].info(" -- vTPM:                 #{enable_vtpm}") if enable_vtpm
           env[:ui].info(" -- Integrity Monitoring: #{enable_integrity_monitoring}") if enable_integrity_monitoring
 
           # Munge image config
           if image_family
-            image = env[:google_compute].images.get_from_family(image_family, image_project_id).self_link
+            image_source = "image_family: #{image_family}, image_project_id: #{image_project_id}"
+            image = env[:google_compute].images.get_from_family(image_family, image_project_id)
           else
-            image = env[:google_compute].images.get(image, image_project_id).self_link
+            image_source = "image: #{image}, image_project_id: #{image_project_id}"
+            image = env[:google_compute].images.get(image, image_project_id)
           end
+          unless image
+            raise Errors::ImageNotFound, :image => image_source
+          end
+          image = image.self_link
 
           # Munge network configs
           if network != 'default'
@@ -157,6 +165,9 @@ module VagrantPlugins
 
           # Munge shieldedInstance config
           shielded_instance_config = { :enable_secure_boot => enable_secure_boot, :enable_vtpm => enable_vtpm, :enable_integrity_monitoring => enable_integrity_monitoring }
+
+          # Munge displayDevice config
+          display_device = { :enable_display => enable_display }
 
           begin
             request_start_time = Time.now.to_i
@@ -297,6 +308,10 @@ module VagrantPlugins
             # TODO(temikus): Remove if the API changes, see internal GOOG ref: b/175063371
             if shielded_instance_config.has_value?(true)
               defaults[:shielded_instance_config] = shielded_instance_config
+            end
+
+            if display_device.has_value?(true)
+              defaults[:display_device] = display_device
             end
 
             server = env[:google_compute].servers.create(defaults)
